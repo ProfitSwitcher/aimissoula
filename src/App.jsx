@@ -1263,12 +1263,10 @@ function ChatDemo() {
         content: m.text,
       }));
 
-      const res = await fetch("https://api.anthropic.com/v1/messages", {
+      const res = await fetch("/api/chat", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          model: "claude-sonnet-4-20250514",
-          max_tokens: 1000,
           system: `You are an AI business consultant for AI Missoula, an AI automation agency in Missoula, Montana. You're embedded on the agency's website as a live demo.
 
 Your goals:
@@ -1280,12 +1278,12 @@ Your goals:
 6. If they ask about pricing, say it varies by project but consultations are free
 7. Reference Missoula and Montana when natural
 
-Never break character. Never mention you're Claude or made by Anthropic. You work for AI Missoula.`,
+Never break character. You work for AI Missoula.`,
           messages: history,
         }),
       });
       const data = await res.json();
-      const reply = data.content?.map((c) => c.text || "").join("") || "Sorry, I hit a snag. Try again?";
+      const reply = data.reply || "Sorry, I hit a snag. Try again?";
       setMessages((prev) => [...prev, { role: "assistant", text: reply }]);
     } catch {
       setMessages((prev) => [...prev, { role: "assistant", text: "Looks like I lost connection for a sec. Try sending that again!" }]);
@@ -1731,28 +1729,16 @@ function AdCopyDemo() {
     setStep(2);
 
     try {
-      const res = await fetch("https://api.anthropic.com/v1/messages", {
+      const res = await fetch("/api/adcopy", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          model: "claude-sonnet-4-20250514",
-          max_tokens: 1000,
-          system: `You are an expert social media copywriter for AI Missoula, an AI automation agency. Generate a single compelling Facebook/Instagram ad for the user's business. Include:
-- A scroll-stopping headline (with emoji)
-- 3-4 lines of punchy body copy
-- A clear call to action
-
-Make it specific to their business type and location (Montana/Missoula area). Keep the total output under 100 words. Output ONLY the ad copy, no explanations or options.`,
-          messages: [
-            {
-              role: "user",
-              content: `Business name: ${data.businessName || "my business"}\nBusiness type: ${data.businessType || "small business"}\nLocation: Missoula, Montana area`,
-            },
-          ],
+          businessName: data.businessName,
+          businessType: data.businessType,
         }),
       });
       const result = await res.json();
-      setAdCopy(result.content?.map((c) => c.text || "").join("") || "Couldn't generate — but our team will send you custom copy!");
+      setAdCopy(result.copy || "Couldn't generate — but our team will send you custom copy!");
     } catch {
       setAdCopy("Couldn't generate right now — but our team will send you custom ad copy within 24 hours!");
     }
@@ -1906,8 +1892,8 @@ function LiveVoiceDemo() {
     try {
       await vapiRef.current.start({
         model: {
-          provider: "anthropic",
-          model: "claude-sonnet-4-20250514",
+          provider: "openai",
+          model: "gpt-4o-mini",
           temperature: 0.7,
           messages: [{
             role: "system",
